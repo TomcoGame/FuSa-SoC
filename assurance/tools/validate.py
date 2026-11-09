@@ -13,6 +13,8 @@ REGISTERS = {
     "07-evidence/evidence.csv": ("id", "title", "source_revision", "configuration", "tool_version", "result", "artifact_path", "sha256", "status"),
     "08-safety-case/claims.csv": ("id", "claim", "requirement_id", "evidence_id", "status"),
     "09-assessment/findings.csv": ("id", "title", "status"),
+    "05-analyses/fmeda-memory-template.csv": ("id", "element", "failure_mode", "status"),
+    "06-verification/fault-campaign.csv": ("id", "safety_function", "related_test", "status"),
 }
 ALLOWED = {"draft", "planned", "in_progress", "verified", "rejected", "closed"}
 errors, records, all_ids = [], {}, set()
