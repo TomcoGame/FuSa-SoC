@@ -1,0 +1,3 @@
+id,claim,requirement_id,evidence_id,status
+CLAIM-001,TCLS mismatch is detected within the specified fault reaction time,REQ-001,,draft
+CLAIM-002,Uncorrectable ECC errors produce the specified fault response,REQ-002,,draft
