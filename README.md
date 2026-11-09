@@ -1,179 +1,132 @@
-# Safety Island
+<div align="center">
 
-This IP contains a safety island, designed for the [Carfield](https://github.com/pulp-platform/carfield) project. It consists of a Triple-Core Lockstep (TCLS)  CV32RT core and two memory banks. To interface with the rest of the SoC, it has both an AXI input and an AXI output port, as well as an optional wrapper with CDCs and synchronizers for all relevant nets.
+# FuSa-SoC
+### Open-source functional safety silicon, with a roadmap to integrated cybersecurity
 
-The safety island, as well as [Carfield](https://github.com/pulp-platform/carfield), is developed as part of the PULP project, a joint effort between ETH Zurich and the University of Bologna.
+**Safety-first RISC-V subsystem · Reproducible verification · Open assurance evidence**
+
+[Architecture](#architecture) · [Getting Started](#getting-started) · [Safety & Security](#safety--security) · [Roadmap](#roadmap) · [Upstream](#upstream-and-attribution)
+
+![FuSa-SoC safety and security architecture](docs/assets/fusa-soc-architecture.svg)
+
+</div>
+
+> [!IMPORTANT]
+> **Development-stage research project.** FuSa-SoC is **not certified** to IEC 61508, ISO 26262, or ISO/SAE 21434. No SIL, ASIL, diagnostic-coverage, or automotive production-readiness claim is made. The OpenTitan integration shown above is **proposed**, not implemented.
+
+## Vision
+
+FuSa-SoC aims to make safety-oriented semiconductor design more accessible, inspectable, and reproducible. We are starting with a proven open RTL research foundation, preserving its attribution, and building toward an independently verifiable safety-and-security subsystem for automotive, robotics, and industrial applications.
+
+**Our objective:** reusable RTL, firmware, test infrastructure, safety analyses, and traceable evidence that developers can evaluate and adapt to their own system-level safety requirements. Evidence is application- and configuration-dependent; this project does not replace independent assessment.
 
 ## Architecture
 
-![Block Diagram](doc/carfield_safety_ss.drawio.svg)
+The current implementation is a fork of the [PULP Safety Island / SentryCore](https://github.com/pulp-platform/safety_island), originally developed for the [Carfield SoC](https://github.com/pulp-platform/carfield) by ETH Zurich and the University of Bologna.
 
-## Configuration
+| Area | Current baseline | FuSa-SoC direction |
+| --- | --- | --- |
+| Compute | CV32RT-based triple-core lockstep, configurable TCLS | Characterize fault detection, timing, and common-cause risks |
+| Memory | Configurable memory banks and ECC/error reporting | Fault injection and diagnostic evidence |
+| Integration | AXI input/output, JTAG, interrupt and timer interfaces | Document integration assumptions and safety interfaces |
+| Software | PULP runtime and FreeRTOS examples | Safety services, fault response and verification |
+| Cybersecurity | No integrated OpenTitan security island established | Evaluate OpenTitan root-of-trust integration |
+| Assurance | Upstream tests and research artifacts | IEC 61508 / ISO 26262 evidence, plus ISO/SAE 21434 security engineering |
 
-The safety island offers several configuration options for integration into an SoC.
+### Existing hardware block diagram
 
-Many configurations are in the configuration object:
+![Upstream SentryCore safety island block diagram](doc/carfield_safety_ss.drawio.svg)
 
-| Parameter           | Default          | Function                                              |
-|---------------------|------------------|-------------------------------------------------------|
-| `HartId`            | `8`              | Core's Hart ID                                        |
-| `BankNumBytes`      | `32'h0001_0000`  | Number of bytes in a memory bank                      |
-| `NumBanks`          | `2`              | Number of memory banks in the island                  |
-| `PulpJtagIdCode`    | `32'h1_0000_db3` | Debug module ID code                                  |
-| `NumTimers`         | `1`              | CV32RT: Number of Timers (currently only 1 supported) |
-| `UseClic`           | `1`              | Use CLIC of legacy CLINT                              |
-| `ClicIntCtlBits`    | `8`              | Number of bits for level-priority encoding in CLIC    |
-| `UseSSClic`         | `0`              | Enable Supervisor mode for CLIC                       |
-| `UseUSClic`         | `0`              | Enable User mode for CLIC                             |
-| `UseVSClic`         | `0`              | Enable Virtual Supervisor mode for CLIC               |
-| `NVsCtxts`          | `0`              | CLIC: Number of virtual contexts supported            |
-| `UseVSPrio`         | `0`              | CLIC: Enable virtual supervisor prioritization        |
-| `UseFastIrq`        | `1`              | Use CV32RT with fast interrupt extension              |
-| `UseFpu`            | `1`              | Enable FPU                                            |
-| `UseIntegerCluster` | `0`              | Make CV32 aware of an external integer cluster        |
-| `UseXPulp`          | `1`              | CV32: Enable PULP extensions                          |
-| `UseZfinx`          | `1`              | CV32: Use ZFinX extension                             |
-| `UseTCLS`           | `1`              | Enable Triple-Core LockStep                           |
-| `NumInterrupts`     | `64`             | Number of input interrupts to the safety island       |
-| `NumMhpmCounters`   | `1`              | CV32: Number of performance counters                  |
+### Proposed system boundary
 
-Some configurations are in the top-level module:
-
-| Parameter           | Function                                                                 |
-|---------------------|--------------------------------------------------------------------------|
-| `GlobalAddrWidth`   | Global address width of SoC                                              |
-| `BaseAddr`          | Base address of the safety island                                        |
-| `AddrRange`         | Address range of the safety island                                       |
-| `MemOffset`         | Address offset of the memory in the island                               |
-| `PeriphOffset`      | Address offset of the peripherals in the island                          |
-| `NumDebug`          | Number of external debug lines from safety island debug module           |
-| `SelectableHarts`   | Selectable modules for external debug                                    |
-| `HartInfo`          | Hart information about external debug                                    |
-| `AxiUserAtop`       | Enable AXI ATOP to use User bits for ID                                  |
-| `AxiUserAtopMsb`    | MSB of AXI ATOP User ID                                                  |
-| `AxiUserAtopLsb`    | LSB of AXI ATOP User ID                                                  |
-| `AxiUserEccErr`     | Enable AXI ECC error signal on user bits                                 |
-| `AxiUserEccErrBit`  | Bit for AXI ECC error                                                    |
-| `AxiDataWidth`      | Data width for AXI bus (in and out)                                      |
-| `AxiAddrWidth`      | AXI address width                                                        |
-| `AxiInputIdWidth`   | AXI ID width for input connection                                        |
-| `AxiUserWidth`      | AXI User width                                                           |
-| `axi_input_req_t`   | AXI input request type                                                   |
-| `axi_input_resp_t`  | AXI input response type                                                  |
-| `AxiOutputIdWidth`  | AXI ID width for output                                                  |
-| `DefaultUser`       | Default User bits for output                                             |
-| `axi_output_req_t`  | AXI output request type                                                  |
-| `axi_output_resp_t` | AXI output response type                                                 |
-
-
-## Bootmodes
-
-| Bootmode  | Configuration |
-|-----------|---------------|
-| JTAG      | `00`          |
-| Preloaded | `01`          |
-
-## Memory Map
-
-To simplify, we assume following configurations for address parameters. The address spaces below will all be moved when changing the `BaseAddr`, the memory banks will be moved further by `MemOffset`, and the Peripherals will be moved further by `PeriphOffset`. Note that the parameters can be set to collide, but this will not work in the device, so take care when configuring.
-
-| Parameter      | Config          |
-|----------------|-----------------|
-| `BaseAddr`     | `32'h6000_0000` |
-| `AddrRange`    | `32'h0080_0000` |
-| `MemOffset`    | `32'h0000_0000` |
-| `PeriphOffset` | `32'h0020_0000` |
-| `BankNumBytes` | `32'h0001_0000` |
-| `NumBanks`     | `2`             |
-
-| Start Address   | Stop Address    | Description                                |
-|-----------------|-----------------|--------------------------------------------|
-| `32'h0000_0000` | `32'h6000_0000` | External - routed to AXI output            |
-| `32'h6000_0000` | `32'h6001_0000` | Memory Bank 1                              |
-| `32'h6001_0000` | `32'h6002_0000` | Memory Bank 2                              |
-| `32'h6002_0000` | `32'h6020_0000` | Error - will respond with error            |
-| `32'h6020_0000` | `32'h6020_1000` | SoC control registers                      |
-| `32'h6020_1000` | `32'h6020_2000` | Boot ROM                                   |
-| `32'h6020_2000` | `32'h6020_3000` | Error - will respond with error (reserved) |
-| `32'h6020_3000` | `32'h6020_4000` | Debug ROM - debug module                   |
-| `32'h6020_4000` | `32'h6020_4040` | ECC manager                                |
-| `32'h6020_4040` | `32'h6020_6000` | Error - will respond with error            |
-| `32'h6020_6000` | `32'h6020_7000` | Simulation Printf (error when synthesized) |
-| `32'h6020_7000` | `32'h6020_8000` | Error - will respond with error            |
-| `32'h6020_8000` | `32'h6020_D000` | Timer                                      |
-| `32'h6020_D000` | `32'h6020_E000` | TCLS registers                             |
-| `32'h6020_E000` | `32'h6021_0000` | Error - will respond with error            |
-| `32'h6021_0000` | `32'h6022_0000` | CLIC                                       |
-| `32'h6022_0000` | `32'h6022_0010` | Instruction bus error registers            |
-| `32'h6022_0010` | `32'h6022_0020` | Data bus error registers                   |
-| `32'h6022_0020` | `32'h6022_0030` | Shadow bus error registers                 |
-| `32'h6022_0030` | `32'h6080_0000` | Error - will respond with error            |
-| `32'h6080_0000` | `32'hFFFF_FFFF` | External - routed to AXI output            |
-
-## Getting started
-
-Download the software stack
+```mermaid
+flowchart TB
+    HOST["Host SoC / ECU"]
+    BUS["Controlled AXI and interrupt interfaces"]
+    SAFE["Safety Island: SentryCore / TCLS / ECC"]
+    SEC["Security Island: OpenTitan-derived (proposed)"]
+    OUT["System safety outputs and external supervision (to be designed)"]
+    HOST --> BUS
+    BUS --> SAFE
+    BUS -. "Proposed" .-> SEC
+    SAFE --> OUT
+    SEC -. "Authenticated services, bounded interface" .-> SAFE
 ```
+
+**Safety principle:** security controls must not block a required safety response. Safe-state actuation, external supervision, diagnostic independence, and freedom from interference must be established for each target application.
+
+## Safety & Security
+
+| Framework | Intended engineering work | Current status |
+| --- | --- | --- |
+| IEC 61508 | Safety lifecycle, requirements, verification, systematic and random hardware integrity | Planned |
+| ISO 26262 | Item definition, HARA, safety concepts, hardware/software analyses and safety case | Planned |
+| ISO/SAE 21434 | Cybersecurity item definition, TARA, cybersecurity requirements and validation | Planned |
+| Safety/security co-engineering | Threat-to-hazard relationships, shared resources, update controls, fault escalation | Planned |
+
+We will publish evidence **with its assumptions, configurations, limitations, and verification status**. Neither lockstep nor ECC alone establishes a SIL/ASIL capability.
+
+## Getting Started
+
+This fork currently retains the upstream build flow. Its simulator instructions reference **QuestaSim**, and the software tests require a compatible PULP RISC-V toolchain. Commands below are inherited from upstream and **have not yet been validated in FuSa-SoC CI**.
+
+```bash
+git clone https://github.com/TomcoGame/FuSa-SoC.git
+cd FuSa-SoC
 make pulp-runtime
 make pulp-freertos
-```
-
-Set up environment variables
-
-```
 source env/env.sh
-```
-
-Make sure the PULP RISC-V toolchain is in your `PATH`. If not:
-
-```
-export PATH=/usr/pack/riscv-1.0-kgf/pulp-gcc-2.6.0:$PATH
-```
-
-Get the hardware dependencies
-
-```
 make checkout
-```
-
-Compile the top with `jtag` or `preloaded` testbenches using Questasim
-
-```
-make build SIM_TOP=tb_safety_island_jtag
-# or
 make build SIM_TOP=tb_safety_island_preloaded
 ```
 
-* JTAG bootmode: the debug module will handle the boot through the jtag interface
-* Preloaded bootmode: it expectes an external master to handle the bootflow through the AXI slave (fot the safety_island) interface
+For JTAG mode:
 
-Compile and execute a test with `pulp-runtime` or `pulp-freertos`
-
-```
-cd sw/tests/{freertos, runtime}_<test_name>
-make clean all run
+```bash
+make build SIM_TOP=tb_safety_island_jtag
 ```
 
-This will start a simulation in Questasim. To activate GUI mode, add `gui=1` to
-the end of the last command.
+Existing software tests live under `sw/tests/`, including ECC, bus error, timer, CLIC, FPU, AXI and FreeRTOS examples. Consult upstream README history for additional environment details.
 
-## Citing
+## Roadmap
 
-The safety island was presented at the RISC-V Summit Europe 2024 as SentryCore. If you use the safety island in your work, you can cite us:
+- [x] Establish public fork of PULP Safety Island
+- [x] Publish FuSa-SoC identity and conceptual architecture
+- [ ] Reproduce dependency checkout and RTL simulation in a documented environment
+- [ ] Add a verified, repeatable CI pipeline with clearly scoped checks
+- [ ] Baseline requirements, assumptions, configuration and safety manual outline
+- [ ] Implement and measure ECC / TCLS fault-injection campaigns
+- [ ] Develop preliminary FMEA / FMEDA / FTA and diagnostic claims
+- [ ] Define independent safe-state and external supervision interfaces
+- [ ] Perform OpenTitan integration trade study and license review
+- [ ] Prototype security-domain integration and safety/security interference tests
+- [ ] Produce a reviewable assurance package for a specific reference use case
 
-```
-@inproceedings{rogenmoser_sentrycore_2024
-  title = {SentryCore: A RISC-V Co-Processor System for Safe, Real-Time Control Applications},
-  author = {Rogenmoser, Michael and Ottaviano, Alessandro and Benz, Thomas and Balas, Robert and Perotti, Matteo and Garofalo, Angelo and Benini, Luca},
-  month = {June},
-  year = {2024},
-  abstract = {In the last decade, we have witnessed exponential growth in the complexity of control systems for safety-critical applications (automotive, robots, industrial automation) and their transition to heterogeneous mixed-criticality systems (MCSs). The growth of the RISC-V ecosystem is creating a major opportunity to develop open-source, vendor-neutral reference platforms for safety-critical computing. We present SentryCore, a reliable, real-time, self-contained, open-source mega-IP for advanced control functions that can be seamlessly integrated into Systems-on-Chip, e.g., for automotive applications, through industry-standard Advanced eXtensible Interface 4 (AXI4). SentryCore features three embedded RISC-V processor cores in lockstep with error-correcting code (ECC) protected data memory for reliable execution of any safety-critical application. Context switching is accelerated to under 110 clock cycles via a RISC-V core-local interrupt controller (CLIC) and dedicated hardware extensions, while a timer-based direct memory access (DMA) engine streamlines sensor data readout during periodic control loops. SentryCore was implemented in Intel’s 16nm process node and tested with FreeRTOS, ThreadX, and RTIC software support.},
-  booktitle = {RISC-V Summit Europe 2024},
-  language = {en},
-  DOI = {10.3929/ethz-b-000673440},
-  address = {Munich, Germany}
-}
-```
+## Repository map
 
-## License
-Unless specified otherwise in the respective file headers, all code checked into this repository is made available under a permissive license. All hardware sources and tool scripts are licensed under the Solderpad Hardware License 0.51 (see `LICENSE.md`). All software sources are licensed under Apache 2.0.
+| Path | Purpose |
+| --- | --- |
+| `rtl/` | Safety-island RTL and testbench sources |
+| `sw/tests/` | Existing runtime and FreeRTOS software tests |
+| `sim/` | Simulation build infrastructure |
+| `boot/` | Boot support |
+| `doc/` | Upstream architecture diagram |
+| `docs/assets/` | FuSa-SoC diagrams and visual documentation |
+| `Bender.yml` / `Bender.lock` | RTL dependency definition and resolution |
+| `.github/workflows/` | Existing upstream-derived CI workflows |
+
+## Upstream and attribution
+
+FuSa-SoC is derived from [pulp-platform/safety_island](https://github.com/pulp-platform/safety_island), a joint PULP project of **ETH Zurich and the University of Bologna**. The original work was presented as **SentryCore: A RISC-V Co-Processor System for Safe, Real-Time Control Applications** at RISC-V Summit Europe 2024.
+
+**Preserved upstream technical work:** TCLS processor subsystem, RTL, simulation environment, software tests, dependencies, and the original architecture diagram. FuSa-SoC's branding and roadmap do not imply authorship of the upstream implementation or endorsement by its authors.
+
+## License and contribution status
+
+Per the upstream README, hardware and tool scripts are generally under **Solderpad Hardware License 0.51**, and software generally under **Apache 2.0**, unless individual file headers specify otherwise. Review `LICENSE.md`, source headers, and all transitive dependencies before redistribution or commercial integration.
+
+Contributions are welcome in principle; a formal contribution policy, coding standard, and review workflow are planned. Please open an issue describing the proposed change and its safety implications before submitting substantial RTL changes.
+
+---
+
+<div align="center"><sub>FuSa-SoC is an open research and engineering effort. Safety claims require evidence, configuration control, and application-specific assessment.</sub></div>
