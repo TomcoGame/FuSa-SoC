@@ -44,3 +44,7 @@ Validation checks required columns, unique IDs, allowed statuses and reference i
 3. Failed tests and unresolved findings must remain visible.
 4. Never change a source file or baseline evidence in place to hide a failure.
 5. The upstream RTL is untouched by this scaffold.
+
+## First reference function
+
+[SF-001 — Detect and report memory integrity faults](01-item-definition/REFERENCE-SF-001.md) is the first **candidate** component-level safety function. Its [FMEDA plan](05-analyses/FMEDA-PLAN.md), [failure-mode template](05-analyses/fmeda-memory-template.csv), [test plan](06-verification/SF-001-TEST-PLAN.md), and [fault campaign](06-verification/fault-campaign.csv) are drafts. No diagnostic coverage or safety integrity is claimed.

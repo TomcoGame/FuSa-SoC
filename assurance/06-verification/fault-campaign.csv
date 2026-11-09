@@ -1,0 +1,4 @@
+id,safety_function,related_test,fault_class,injection_target,expected_observable,status,evidence_id
+FI-001,SF-001,TEST-002,single_bit,SRAM ECC-protected bank,ECC corrected/error indication,planned,
+FI-002,SF-001,TEST-002,multi_bit,SRAM ECC-protected bank,Uncorrectable error indication,planned,
+FI-003,SF-001,TEST-002,reporting_path,Error reporting logic,Detection or documented coverage gap,planned,

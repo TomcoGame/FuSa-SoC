@@ -1,0 +1,5 @@
+id,element,failure_mode,local_effect,system_effect,diagnostic_mechanism,diagnostic_assumption,failure_rate_source,classification,diagnostic_coverage,evidence_id,status
+FM-001,SRAM storage,Single-bit corruption,Data bit altered,Potentially corrupted safety-related data,ECC correction/reporting,Verify configured ECC behavior,TBD,unclassified,TBD,,draft
+FM-002,SRAM storage,Multi-bit corruption,Data word altered,Potentially undetected or uncorrectable data,ECC uncorrectable error reporting,Verify coding distance and interface,TBD,unclassified,TBD,,draft
+FM-003,ECC checker,Checker logic failure,Diagnostic may fail,Memory error may escape detection,Independent checker self-test TBD,Not demonstrated,TBD,unclassified,TBD,,draft
+FM-004,Error reporting,Status path stuck or lost,Fault indication unavailable,External supervisor not notified,Readback/monitor TBD,Not demonstrated,TBD,unclassified,TBD,,draft
