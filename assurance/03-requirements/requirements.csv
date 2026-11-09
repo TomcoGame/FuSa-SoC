@@ -1,0 +1,3 @@
+id,title,source,status,allocated_to,verification_method
+REQ-001,Define fault reporting behavior for TCLS mismatch,HZ-002,draft,ARCH-001,test
+REQ-002,Define detection and escalation of uncorrectable memory errors,HZ-002,draft,ARCH-002,test
