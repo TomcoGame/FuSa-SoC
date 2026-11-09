@@ -88,6 +88,16 @@ make build SIM_TOP=tb_safety_island_jtag
 
 Existing software tests live under `sw/tests/`, including ECC, bus error, timer, CLIC, FPU, AXI and FreeRTOS examples. Consult upstream README history for additional environment details.
 
+## Assurance framework
+
+The [FuSa-SoC Assurance Framework](assurance/README.md) establishes a controlled, traceable work-product structure for the safety lifecycle and safety/security co-engineering. It currently includes draft item definition, hazard register, requirements, architecture allocation, analyses, tests, evidence index, claims, assessment findings and cybersecurity planning.
+
+```bash
+python3 assurance/tools/validate.py
+```
+
+This validator checks register structure and traceability **only**; it does not establish compliance, coverage or certification. See [governance plan](assurance/00-governance/PLAN.md) and [fault-injection plan](docs/FAULT-INJECTION-PLAN.md).
+
 ## Roadmap
 
 - [x] Establish public fork of PULP Safety Island
