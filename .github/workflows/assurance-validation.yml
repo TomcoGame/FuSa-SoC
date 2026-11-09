@@ -1,0 +1,20 @@
+name: Assurance register validation
+on:
+  push:
+    branches: [main, feature/assurance-framework-v0]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  assurance-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate assurance registers and traceability
+        run: python3 assurance/tools/validate.py
+      - name: Scope notice
+        run: echo "::notice::Structural register validation only; no technical safety claim or standard conformity established."
