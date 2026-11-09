@@ -1,0 +1,30 @@
+name: RTL evidence inventory
+on:
+  push:
+    branches: [main, feature/rtl-evidence-inventory]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Inspect RTL and test source inventory
+        run: python3 tools/verify_rtl_inventory.py > rtl-inventory.json
+      - name: Display source inventory
+        if: always()
+        run: cat rtl-inventory.json || true
+      - name: Upload evidence inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtl-source-inventory
+          path: rtl-inventory.json
+          if-no-files-found: warn
+      - name: Explicit evidence limitation
+        run: echo "::notice::Static source checks only. RTL simulation, lockstep fault detection and ECC diagnostic coverage have not been established."
