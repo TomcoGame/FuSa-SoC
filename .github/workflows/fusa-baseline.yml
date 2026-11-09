@@ -1,0 +1,36 @@
+name: FuSa baseline checks
+on:
+  push:
+    branches: [main, feature/verification-baseline-opentitan-study]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repository-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate baseline documentation and tracked sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in README.md Bender.yml Bender.lock LICENSE.md rtl/safety_island_top.sv rtl/safety_core_wrap.sv docs/ARCHITECTURE.md docs/ASSURANCE-ROADMAP.md docs/GETTING-STARTED.md docs/assets/fusa-soc-architecture.svg docs/OPENTITAN-TRADE-STUDY.md; do
+            test -s "$file" || { echo "::error::Missing or empty $file"; exit 1; }
+          done
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          ElementTree.parse("docs/assets/fusa-soc-architecture.svg")
+          readme = Path("README.md").read_text()
+          assert "not certified" in readme.lower()
+          assert "proposed" in readme.lower()
+          print("Documentation and SVG integrity checks passed.")
+          PY
+      - name: Record source revision and dependencies
+        run: |
+          git rev-parse HEAD
+          sha256sum Bender.yml Bender.lock rtl/safety_island_top.sv rtl/safety_core_wrap.sv
+      - name: Scope notice
+        run: |
+          echo "::notice::Repository integrity only: this job does not compile RTL, execute simulation, measure diagnostic coverage, or establish functional safety compliance."
